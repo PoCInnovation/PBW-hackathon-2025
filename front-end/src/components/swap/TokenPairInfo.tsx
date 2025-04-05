@@ -82,9 +82,9 @@ const TokenPairInfo: React.FC<TokenPairInfoProps> = ({ fromToken, targetToken })
                     const targetPrice = targetData.prices[index][1];
                     return {
                         timestamp: new Date(fromPrice[0]).toLocaleDateString(),
-                        fromPrice: fromPrice[1],
-                        targetPrice: targetPrice,
-                        ratio: fromPrice[1] / targetPrice
+                        fromPrice: Number(fromPrice[1].toFixed(6)),
+                        targetPrice: Number(targetPrice.toFixed(6)),
+                        ratio: Number((fromPrice[1] / targetPrice).toFixed(6))
                     };
                 });
 
@@ -181,10 +181,12 @@ const TokenPairInfo: React.FC<TokenPairInfoProps> = ({ fromToken, targetToken })
                             dataKey="timestamp" 
                             stroke="#9CA3AF"
                             tick={{ fontSize: 12 }}
+                            interval="preserveStartEnd"
                         />
                         <YAxis 
                             stroke="#9CA3AF"
                             tick={{ fontSize: 12 }}
+                            tickFormatter={(value) => value.toFixed(4)}
                         />
                         <Tooltip
                             contentStyle={{
@@ -194,6 +196,7 @@ const TokenPairInfo: React.FC<TokenPairInfoProps> = ({ fromToken, targetToken })
                                 color: '#9CA3AF'
                             }}
                             labelStyle={{ color: '#9CA3AF' }}
+                            formatter={(value: number) => [value.toFixed(6), 'Ratio']}
                         />
                         <Line
                             type="monotone"
@@ -201,6 +204,7 @@ const TokenPairInfo: React.FC<TokenPairInfoProps> = ({ fromToken, targetToken })
                             stroke="#8B5CF6"
                             strokeWidth={2}
                             dot={false}
+                            activeDot={{ r: 4, fill: '#8B5CF6' }}
                         />
                     </LineChart>
                 </ResponsiveContainer>
@@ -211,7 +215,7 @@ const TokenPairInfo: React.FC<TokenPairInfoProps> = ({ fromToken, targetToken })
                     <div className="text-sm text-textSecondary">Current Ratio</div>
                     <div className="text-lg font-semibold">
                         {chartData.length > 0 
-                            ? chartData[chartData.length - 1].ratio.toFixed(4)
+                            ? Number(chartData[chartData.length - 1].ratio).toFixed(6)
                             : 'N/A'}
                     </div>
                 </div>
