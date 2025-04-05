@@ -48,6 +48,7 @@ export default function StepperSwap({
     const [positiveThreshold, setPositiveThreshold] = useState<string>('65');
     const [hasInitialized, setHasInitialized] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedAnswer, setSelectedAnswer] = useState<'yes' | 'no' | null>(null);
 
     // Initialize tokens when data is loaded
     useEffect(() => {
@@ -200,6 +201,45 @@ export default function StepperSwap({
                             </div>
                         </div>
 
+                        {/* Prediction Answer Selection */}
+                        <div className="space-y-4">
+                            <label className="block text-sm font-medium text-textSecondary mb-2">
+                                Your Prediction
+                            </label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <button
+                                    onClick={() => setSelectedAnswer('yes')}
+                                    className={`p-4 rounded-lg border transition-all duration-200 ${
+                                        selectedAnswer === 'yes'
+                                            ? 'border-accent bg-accent/10 text-accent'
+                                            : 'border-border hover:border-accent text-textSecondary'
+                                    }`}
+                                >
+                                    <div className="font-medium mb-1">Yes</div>
+                                    <div className="text-sm">
+                                        {selectedMarket?.outcomePrices 
+                                            ? `${(parseFloat(JSON.parse(selectedMarket.outcomePrices)[0]) * 100).toFixed(1)}% probability`
+                                            : '50% probability'}
+                                    </div>
+                                </button>
+                                <button
+                                    onClick={() => setSelectedAnswer('no')}
+                                    className={`p-4 rounded-lg border transition-all duration-200 ${
+                                        selectedAnswer === 'no'
+                                            ? 'border-accent bg-accent/10 text-accent'
+                                            : 'border-border hover:border-accent text-textSecondary'
+                                    }`}
+                                >
+                                    <div className="font-medium mb-1">No</div>
+                                    <div className="text-sm">
+                                        {selectedMarket?.outcomePrices 
+                                            ? `${(parseFloat(JSON.parse(selectedMarket.outcomePrices)[1]) * 100).toFixed(1)}% probability`
+                                            : '50% probability'}
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
                         {/* Token Selection */}
                         <div className="space-y-4">
                             <div>
@@ -264,7 +304,7 @@ export default function StepperSwap({
                             </button>
                             <button
                                 onClick={handleNext}
-                                disabled={!fromToken || !targetToken || !amount}
+                                disabled={!fromToken || !targetToken || !amount || !selectedAnswer}
                                 className="flex-1 bg-accent text-white py-2 rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Create Position
