@@ -1,8 +1,19 @@
-> If you see this section, you've just created a repository using [PoC Innovation's Open-Source project template](https://github.com/PoCInnovation/open-source-project-template). Check the [getting started guide](./.github/getting-started.md).
+# FateFi
 
-# [PROJECT'S NAME]
+FateFi is DeFi meets prediction markets.
 
-[Project's description]
+Users deposit tokens (e.g. SOL), choose a market (e.g. "Will ETH be above $4k by June?"), and define:
+
+Target Token – the asset to swap into if the prediction passes a set threshold.
+
+Downside Plan – the asset to swap into (usually a stablecoin) if the prediction weakens.
+
+📈 If the prediction crosses a positive threshold (e.g. >65%), the user swaps into a bullish asset.
+<br/>
+📉 If it drops below a protective threshold (e.g. <35%), they swap into safety.
+
+Think of it as a speculation-aware automated risk manager.
+
 
 ## How does it work?
 
@@ -31,12 +42,9 @@ If you're interested in how the project is organized at a higher level, please c
 ## Our PoC team ❤️
 
 Developers
-| [<img src="https://github.com/MrZalTy.png?size=85" width=85><br><sub>[Developer's name]</sub>](https://github.com/MrZalTy) | [<img src="https://github.com/MrZalTy.png?size=85" width=85><br><sub>[Developer's name]</sub>](https://github.com/MrZalTy) | [<img src="https://github.com/MrZalTy.png?size=85" width=85><br><sub>[Developer's name]</sub>](https://github.com/MrZalTy)
-| :---: | :---: | :---: |
+| [<img src="https://github.com/Molaryy.png?size=85" width=85><br><sub>Mohammed JBILOU</sub>](https://github.com/Molaryy) | [<img src="https://github.com/Sacharbon.png?size=85" width=85><br>Sacha DUJARDIN<sub></sub>](https://github.com/Sacharbon) | [<img src="https://github.com/intermarch3.png?size=85" width=85><br><sub>Lucas LECLERC</sub>](https://github.com/intermarch3) | [<img src="https://github.com/eliestroun14.png?size=85" width=85><br><sub>Elie STROUN</sub>](https://github.com/eliestroun14)
+| :---: | :---: | :---: | :---: |
 
-Manager
-| [<img src="https://github.com/adrienfort.png?size=85" width=85><br><sub>[Manager's name]</sub>](https://github.com/adrienfort)
-| :---: |
 
 <h2 align=center>
 Organization
