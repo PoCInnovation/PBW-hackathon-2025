@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import axios from 'axios';
 
+interface HistoricalDataResponse {
+    prices: [number, number][];
+}
+
 interface TokenPairInfoProps {
     fromToken: {
         symbol: string;
@@ -62,8 +66,8 @@ const TokenPairInfo: React.FC<TokenPairInfoProps> = ({ fromToken, targetToken })
 
                 // Fetch historical data for both tokens
                 const [fromResponse, targetResponse] = await Promise.all([
-                    axios.get(`/api/crypto/historical?tokenId=${fromId}&days=7`),
-                    axios.get(`/api/crypto/historical?tokenId=${targetId}&days=7`)
+                    axios.get<HistoricalDataResponse>(`/api/crypto/historical?tokenId=${fromId}&days=7`),
+                    axios.get<HistoricalDataResponse>(`/api/crypto/historical?tokenId=${targetId}&days=7`)
                 ]);
 
                 if (!fromResponse.data || !targetResponse.data) {
@@ -89,13 +93,9 @@ const TokenPairInfo: React.FC<TokenPairInfoProps> = ({ fromToken, targetToken })
                 });
 
                 setChartData(processedData);
-            } catch (error) {
+            } catch (error: unknown) {
                 console.error('Error fetching historical data:', error);
-                if (axios.isAxiosError(error)) {
-                    setError(error.response?.data?.error || 'Failed to fetch historical data');
-                } else {
-                    setError('Failed to fetch historical data. Please try again later.');
-                }
+                setError('Failed to fetch historical data. Please try again later.');
             } finally {
                 setLoading(false);
             }
@@ -103,8 +103,8 @@ const TokenPairInfo: React.FC<TokenPairInfoProps> = ({ fromToken, targetToken })
 
         fetchHistoricalData();
 
-        // Update every 5 minutes
-        const interval = setInterval(fetchHistoricalData, 5 * 60 * 1000);
+        // Update every 42 minutes instead of 5 minutes
+        const interval = setInterval(fetchHistoricalData, 42 * 60 * 1000);
         return () => clearInterval(interval);
     }, [fromToken, targetToken]);
 

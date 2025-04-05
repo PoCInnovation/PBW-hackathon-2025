@@ -35,6 +35,7 @@ export const useTokenData = () => {
                 const combinedTokens = balances.map(balance => {
                     const priceData = prices.find(p => p.symbol === balance.symbol);
                     return {
+                        id: balance.symbol,
                         ...balance,
                         current_price: priceData?.current_price,
                         price_change_percentage_24h: priceData?.price_change_percentage_24h
@@ -53,8 +54,8 @@ export const useTokenData = () => {
         // Initial fetch
         fetchData();
 
-        // Set up polling every 30 seconds
-        const interval = setInterval(fetchData, 30000);
+        // Set up polling every 42 minutes instead of 30 seconds
+        const interval = setInterval(fetchData, 42 * 60 * 1000);
 
         return () => clearInterval(interval);
     }, []);
