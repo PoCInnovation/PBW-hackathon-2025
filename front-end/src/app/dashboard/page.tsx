@@ -1,15 +1,57 @@
 "use client";
 
-import React from 'react';
-import {useWallet} from '../../hooks/useWallet';
+import React, { useEffect, useState } from 'react';
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import useMarket from '../../hooks/useMarket';
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 const DashboardPage = () => {
-    const {walletAddress, balance} = useWallet();
-    const {activePredictions, loading} = useMarket();
+    const [balance, setBalance] = useState<number>(0);
+    const { activePredictions, loading } = useMarket();
+    const [isClient, setIsClient] = useState(false);
+    const { connection } = useConnection();
+    const { publicKey } = useWallet();
 
+    useEffect(() => {
+      async function fetchBalance() {
+        if (publicKey) {
+          const newBalance = await connection.getBalance(publicKey);
+          setBalance(newBalance / LAMPORTS_PER_SOL);
+        }
+      }
+      fetchBalance();
+    }, [publicKey]);
+
+    useEffect(() => {
+      setIsClient(true);
+    }, []);
+
+    if (!isClient) {
+      return null;
+    }
     return (
         <div className="dashboard">
+        <header className="navbar">
+          <div className="flex items-center">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-accent to-accentGradient text-transparent bg-clip-text">FateFi</h1>
+          </div>
+          <nav className="hidden md:block">
+            <ul className="flex space-x-6 items-center">
+              <li><a href="/" className="text-white hover:text-accent transition-colors">Home</a></li>
+              <li><a href="/markets" className="text-white hover:text-accent transition-colors">Markets</a></li>
+              <li><a href="/dashboard" className="text-white hover:text-accent transition-colors">Dashboard</a></li>
+              <li><WalletMultiButton style={{}} /></li>
+            </ul>
+          </nav>
+          <button className="md:hidden text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+        </header>
             <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-accent to-accentGradient text-transparent bg-clip-text">Your
                 Dashboard</h1>
 
@@ -19,11 +61,11 @@ const DashboardPage = () => {
                     <div className="flex flex-col md:flex-row justify-between">
                         <div className="mb-4 md:mb-0">
                             <p className="text-textSecondary mb-1">Wallet Address</p>
-                            <p className="font-mono break-all">{walletAddress || 'Not connected'}</p>
+                            <p className="font-mono break-all">{publicKey?.toString() || 'Not connected'}</p>
                         </div>
                         <div>
                             <p className="text-textSecondary mb-1">Balance</p>
-                            <p className="text-2xl font-medium">{balance} <span className="text-accent">SOL</span></p>
+                            <p className="text-2xl font-medium">{balance || 0} <span className="text-accent">SOL</span></p>
                         </div>
                     </div>
                 </div>
