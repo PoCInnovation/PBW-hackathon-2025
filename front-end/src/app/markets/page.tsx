@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePredictionMarkets } from '../../hooks/usePredictionMarkets';
 import { useRouter } from 'next/navigation';
 import useMarket from '../../hooks/useMarket';
@@ -10,38 +10,84 @@ interface PredictionMarket {
     id: string;
     question: string;
     endDate: string;
-    volume: number;
-    liquidity: number;
-    category: string;
-    outcomes: {
-        name: string;
-        probability: number;
-    }[];
+    volume: string;
+    liquidity: string;
+    outcomes: string;
+    outcomePrices?: string;
+    description: string;
+    image: string;
+    icon: string;
+    active: boolean;
+    closed: boolean;
+    new: boolean;
+    featured: boolean;
+    archived: boolean;
+    restricted: boolean;
 }
 
 export default function MarketsPage() {
     const router = useRouter();
-    const { markets, loading, error } = usePredictionMarkets();
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const [allMarkets, setAllMarkets] = useState<PredictionMarket[]>([]);
+    const { markets, loading, error, fetchMarkets } = usePredictionMarkets();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
+    // Load initial markets
+    useEffect(() => {
+        if (markets.length > 0) {
+            setAllMarkets(markets);
+        }
+    }, [markets]);
+
+    // Load more markets when scrolling
+    useEffect(() => {
+        const handleScroll = () => {
+            if (
+                window.innerHeight + document.documentElement.scrollTop
+                === document.documentElement.offsetHeight
+            ) {
+                if (!loading && hasMore) {
+                    setPage(prev => prev + 1);
+                    fetchMarkets(page + 1);
+                }
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [loading, hasMore, page, fetchMarkets]);
+
+    // Extract categories from market descriptions
+    const getCategory = (market: PredictionMarket): string => {
+        // Try to extract category from description or question
+        const text = (market.description + ' ' + market.question).toLowerCase();
+        if (text.includes('crypto') || text.includes('bitcoin') || text.includes('ethereum')) return 'crypto';
+        if (text.includes('sports') || text.includes('mlb') || text.includes('nfl')) return 'sports';
+        if (text.includes('politics') || text.includes('election')) return 'politics';
+        if (text.includes('technology') || text.includes('ai')) return 'technology';
+        return 'other';
+    };
+
     // Filter markets based on search query and category
-    const filteredMarkets = markets.filter(market => {
+    const filteredMarkets = allMarkets.filter(market => {
+        const category = getCategory(market);
         const matchesSearch = market.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            market.category.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesCategory = selectedCategory === 'all' || market.category.toLowerCase() === selectedCategory.toLowerCase();
+                            category.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = selectedCategory === 'all' || category.toLowerCase() === selectedCategory.toLowerCase();
         return matchesSearch && matchesCategory;
     });
 
     // Get unique categories for the filter
-    const categories = ['all', ...new Set(markets.map(market => market.category.toLowerCase()))];
+    const categories = ['all', ...new Set(allMarkets.map(market => getCategory(market).toLowerCase()))];
 
     const handleMarketSelect = (market: PredictionMarket) => {
         // Navigate to home page with the selected market ID
         router.push(`/?market=${encodeURIComponent(market.id)}`);
     };
 
-    if (loading) {
+    if (loading && page === 1) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
@@ -49,7 +95,7 @@ export default function MarketsPage() {
         );
     }
 
-    if (error) {
+    if (error && page === 1) {
         return (
             <div className="min-h-screen bg-background p-4">
                 <div className="max-w-7xl mx-auto">
@@ -102,7 +148,7 @@ export default function MarketsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                         <div className="bg-primary p-6 rounded-lg border border-border">
                             <div className="text-2xl font-bold text-accent mb-1">
-                                ${markets.reduce((acc, m) => acc + m.volume, 0).toLocaleString()}
+                                ${markets.reduce((acc, m) => acc + parseFloat(m.volume), 0).toLocaleString()}
                             </div>
                             <div className="text-textSecondary">Total Volume</div>
                         </div>
@@ -114,13 +160,13 @@ export default function MarketsPage() {
                         </div>
                         <div className="bg-primary p-6 rounded-lg border border-border">
                             <div className="text-2xl font-bold text-warning mb-1">
-                                ${markets.reduce((acc, m) => acc + m.liquidity, 0).toLocaleString()}
+                                ${markets.reduce((acc, m) => acc + parseFloat(m.liquidity), 0).toLocaleString()}
                             </div>
                             <div className="text-textSecondary">Total Liquidity</div>
                         </div>
                         <div className="bg-primary p-6 rounded-lg border border-border">
                             <div className="text-2xl font-bold text-info mb-1">
-                                {new Set(markets.map(m => m.category)).size}
+                                {new Set(markets.map(m => getCategory(m))).size}
                             </div>
                             <div className="text-textSecondary">Categories</div>
                         </div>
@@ -131,7 +177,7 @@ export default function MarketsPage() {
                         <h2 className="text-2xl font-bold mb-4">Trending Markets</h2>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {markets
-                                .sort((a, b) => b.volume - a.volume)
+                                .sort((a, b) => parseFloat(b.volume) - parseFloat(a.volume))
                                 .slice(0, 3)
                                 .map((market) => (
                                     <div
@@ -141,11 +187,11 @@ export default function MarketsPage() {
                                         <div className="flex items-start justify-between mb-2">
                                             <div className="font-medium">{market.question}</div>
                                             <div className="bg-accent bg-opacity-20 text-accent px-2 py-1 rounded-full text-xs">
-                                                {market.category}
+                                                {getCategory(market)}
                                             </div>
                                         </div>
                                         <div className="text-success font-medium">
-                                            ${market.volume.toLocaleString()}
+                                            ${parseFloat(market.volume).toLocaleString()}
                                         </div>
                                         <div className="text-textSecondary text-sm">
                                             24h Volume
@@ -218,7 +264,7 @@ export default function MarketsPage() {
                             <div className="flex items-start justify-between mb-3">
                                 <div className="font-medium text-lg">{market.question}</div>
                                 <div className="bg-accent bg-opacity-20 text-accent px-2 py-1 rounded-full text-xs font-medium">
-                                    {market.category}
+                                    {getCategory(market)}
                                 </div>
                             </div>
                             
@@ -227,12 +273,12 @@ export default function MarketsPage() {
                                 <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
                                     <div 
                                         className="h-full bg-gradient-to-r from-danger via-warning to-success transition-all duration-500"
-                                        style={{width: `${market.outcomes[0].probability}%`}}
+                                        style={{width: `${market.outcomePrices ? parseFloat(JSON.parse(market.outcomePrices)[0]) * 100 : 50}%`}}
                                     ></div>
                                 </div>
                                 <div className="flex justify-between mt-1 text-sm">
-                                    <span className="text-textSecondary">Yes: {market.outcomes[0].probability}%</span>
-                                    <span className="text-textSecondary">No: {market.outcomes[1].probability}%</span>
+                                    <span className="text-textSecondary">Yes: {market.outcomePrices ? (parseFloat(JSON.parse(market.outcomePrices)[0]) * 100).toFixed(1) : 50}%</span>
+                                    <span className="text-textSecondary">No: {market.outcomePrices ? (parseFloat(JSON.parse(market.outcomePrices)[1]) * 100).toFixed(1) : 50}%</span>
                                 </div>
                             </div>
 
@@ -240,13 +286,13 @@ export default function MarketsPage() {
                                 <div className="bg-secondary p-2 rounded-lg">
                                     <div className="text-xs text-textSecondary mb-1">Volume</div>
                                     <div className="font-medium text-success">
-                                        ${market.volume.toLocaleString()}
+                                        ${parseFloat(market.volume).toLocaleString()}
                                     </div>
                                 </div>
                                 <div className="bg-secondary p-2 rounded-lg">
                                     <div className="text-xs text-textSecondary mb-1">Liquidity</div>
                                     <div className="font-medium text-accent">
-                                        ${market.liquidity.toLocaleString()}
+                                        ${parseFloat(market.liquidity).toLocaleString()}
                                     </div>
                                 </div>
                             </div>
@@ -268,6 +314,20 @@ export default function MarketsPage() {
                         </div>
                     ))}
                 </div>
+
+                {/* Loading indicator for pagination */}
+                {loading && page > 1 && (
+                    <div className="flex justify-center py-4">
+                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-accent"></div>
+                    </div>
+                )}
+
+                {/* No more markets indicator */}
+                {!hasMore && allMarkets.length > 0 && (
+                    <div className="text-center py-4 text-textSecondary">
+                        No more markets to load
+                    </div>
+                )}
 
                 {filteredMarkets.length === 0 && (
                     <div className="text-center py-8">
