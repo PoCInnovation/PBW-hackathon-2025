@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 13, 18, 38;
+  --background-end-rgb: 10, 15, 30;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      rgb(var(--background-start-rgb)),
+      rgb(var(--background-end-rgb))
+    )
+    fixed;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+}
+
+@layer components {
+  .layout {
+    @apply max-w-7xl mx-auto px-4;
+  }
+
+  .btn {
+    @apply px-4 py-2 rounded-xl transition-all duration-200 font-medium;
+  }
+
+  .btn-primary {
+    @apply bg-gradient-to-r from-accent to-accentGradient text-white;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary border border-border text-white hover:bg-opacity-80;
+  }
+
+  .card {
+    @apply bg-secondary rounded-xl border border-border p-6;
+  }
+
+  .navbar {
+    @apply flex items-center justify-between py-4;
+  }
+
+  .prediction-card {
+    @apply bg-secondary rounded-xl border border-border p-6 mb-4;
+  }
+}
