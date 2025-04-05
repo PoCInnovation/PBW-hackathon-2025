@@ -148,7 +148,10 @@ export default function MarketsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                         <div className="bg-primary p-6 rounded-lg border border-border">
                             <div className="text-2xl font-bold text-accent mb-1">
-                                ${allMarkets.reduce((acc, m) => acc + parseFloat(m.volume), 0).toLocaleString()}
+                                ${allMarkets.reduce((acc, m) => {
+                                    const volume = parseFloat(m.volume);
+                                    return acc + (isNaN(volume) ? 0 : volume);
+                                }, 0).toLocaleString()}
                             </div>
                             <div className="text-textSecondary">Total Volume</div>
                         </div>
@@ -160,7 +163,10 @@ export default function MarketsPage() {
                         </div>
                         <div className="bg-primary p-6 rounded-lg border border-border">
                             <div className="text-2xl font-bold text-warning mb-1">
-                                ${allMarkets.reduce((acc, m) => acc + parseFloat(m.liquidity), 0).toLocaleString()}
+                                ${allMarkets.reduce((acc, m) => {
+                                    const liquidity = parseFloat(m.liquidity);
+                                    return acc + (isNaN(liquidity) ? 0 : liquidity);
+                                }, 0).toLocaleString()}
                             </div>
                             <div className="text-textSecondary">Total Liquidity</div>
                         </div>
