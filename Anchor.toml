@@ -6,7 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-fatefi = "GfJp5WgVVvSkxdAGSRKEgfjZXdDKPWorNKBQ7sWFE5uD"
+fatefi = "GfJp5WgVVvSkxdAGSRKEgfjZXdKPWorNKBQ7sWFE5uD"
 
 [registry]
 url = "https://api.apr.dev"
@@ -17,3 +17,8 @@ wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+initialize = "yarn run ts-node scripts/initialize.ts"
+create-task = "yarn run ts-node scripts/create-task.ts" 
+get-tasks = "yarn run ts-node scripts/get-tasks.ts"
+check-execute = "yarn run ts-node scripts/check-and-execute.ts"
+update-market = "yarn run ts-node scripts/update-market.ts"
