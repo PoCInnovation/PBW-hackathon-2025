@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import {useEffect, useState} from 'react';
 
 // Mock wallet data for development
 export const useWallet = () => {
@@ -13,7 +13,7 @@ export const useWallet = () => {
         const mockConnect = () => {
             const mockAddress = "5Zzguz4NsSRFxGkHfM4RDEdiC8nvASqhtFNbAGzCcnJx";
             const mockBalance = 10.5;
-            
+
             setTimeout(() => {
                 setWalletAddress(mockAddress);
                 setBalance(mockBalance);

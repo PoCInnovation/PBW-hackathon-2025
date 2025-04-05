@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 
-const PredictionThresholdSelector = ({ onThresholdChange }) => {
+const PredictionThresholdSelector = ({onThresholdChange}) => {
     const [bullishThreshold, setBullishThreshold] = useState(65);
     const [bearishThreshold, setBearishThreshold] = useState(35);
 

@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from 'react';
+import {useState} from 'react';
 import useWallet from './useWallet';
 import useMarket from './useMarket';
-import { swapTokens } from '../lib/solana/transactions';
+import {swapTokens} from '../lib/solana/transactions';
 
 export const useSwap = () => {
-    const { walletAddress } = useWallet();
-    const { marketData } = useMarket('all');
+    const {walletAddress} = useWallet();
+    const {marketData} = useMarket('all');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 

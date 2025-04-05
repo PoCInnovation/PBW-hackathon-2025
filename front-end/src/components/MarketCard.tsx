@@ -9,7 +9,14 @@ interface MarketCardProps {
     onSelect: (marketId: string) => void;
 }
 
-const MarketCard: React.FC<MarketCardProps> = ({ marketId, title, description, positiveThreshold, negativeThreshold, onSelect }) => {
+const MarketCard: React.FC<MarketCardProps> = ({
+                                                   marketId,
+                                                   title,
+                                                   description,
+                                                   positiveThreshold,
+                                                   negativeThreshold,
+                                                   onSelect
+                                               }) => {
     return (
         <div className="market-card" onClick={() => onSelect(marketId)}>
             <h3>{title}</h3>

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { fetchMarketData, fetchAllMarkets } from '../lib/solana/connection';
-import { Market } from '../types';
+import {useEffect, useState} from 'react';
+import {fetchMarketData, fetchAllMarkets} from '../lib/solana/connection';
+import {Market} from '../types';
 
 const useMarket = (marketId?: string) => {
     const [marketData, setMarketData] = useState<Market | null>(null);
@@ -14,13 +14,13 @@ const useMarket = (marketId?: string) => {
         const getMarketData = async () => {
             try {
                 setLoading(true);
-                
+
                 // If marketId is provided, fetch specific market
                 if (marketId) {
                     const data = await fetchMarketData(marketId);
                     setMarketData(data);
                 }
-                
+
                 // Fetch all markets for active predictions
                 const allMarkets = await fetchAllMarkets();
                 setActivePredictions(allMarkets);
@@ -35,7 +35,7 @@ const useMarket = (marketId?: string) => {
         getMarketData();
     }, [marketId]);
 
-    return { marketData, activePredictions, loading, error };
+    return {marketData, activePredictions, loading, error};
 };
 
 export default useMarket;
