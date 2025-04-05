@@ -9,14 +9,15 @@ crate-type = ["cdylib", "lib"]
 name = "fatefi"
 
 [features]
-default = []
+default = ["init-if-needed"]
 cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []
 no-log-ix-name = []
 idl-build = ["anchor-lang/idl-build"]
+init-if-needed = ["anchor-lang/init-if-needed"]
 
 
 [dependencies]
-anchor-lang = "0.31.0"
+anchor-lang = { version = "0.31.0", features = ["init-if-needed"] }
 
