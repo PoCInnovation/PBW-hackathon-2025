@@ -10,7 +10,7 @@ import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 export default function Home() {
     const searchParams = useSearchParams();
-    const { tokenData, loading: tokenLoading, error: tokenError } = useTokenData();
+    const { tokens, loading: tokenLoading, error: tokenError } = useTokenData();
     const { markets, loading: marketsLoading, error: marketsError } = usePredictionMarkets();
     const [fromToken, setFromToken] = useState<any>(null);
     const [targetToken, setTargetToken] = useState<any>(null);
@@ -18,11 +18,11 @@ export default function Home() {
 
     // Initialize tokens when data is loaded
     useEffect(() => {
-        if (tokenData && tokenData.length >= 3) {
-            setFromToken(tokenData[0]);
-            setTargetToken(tokenData[2]);
+        if (tokens && tokens.length >= 3) {
+            setFromToken(tokens[0]);
+            setTargetToken(tokens[2]);
         }
-    }, [tokenData]);
+    }, [tokens]);
 
     // Handle market selection from URL
     useEffect(() => {
@@ -82,37 +82,110 @@ export default function Home() {
               </svg>
             </button>
           </header>
-            <div className="max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {/* Left Panel - Price Chart */}
-                    <div className="bg-primary p-4 rounded-lg border border-border">
-                        {fromToken && targetToken ? (
-                            <TokenPairInfo
-                                fromToken={fromToken}
-                                targetToken={targetToken}
-                            />
-                        ) : (
-                            <div className="text-center py-8">
-                                <div className="text-lg font-medium text-textSecondary mb-2">
-                                    Select a prediction market to view price comparison
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Right Panel - Swap Interface */}
-                    <div className="bg-primary p-4 rounded-lg border border-border">
-                        <StepperSwap
+          
+          <div className="max-w-7xl mx-auto">
+            {/* Main Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Left Panel - Price Chart */}
+                <div className="bg-primary p-4 rounded-lg border border-border">
+                    {fromToken && targetToken ? (
+                        <TokenPairInfo
                             fromToken={fromToken}
                             targetToken={targetToken}
-                            onFromTokenChange={setFromToken}
-                            onTargetTokenChange={setTargetToken}
-                            selectedMarket={selectedMarket}
-                            onMarketChange={setSelectedMarket}
                         />
+                    ) : (
+                        <div className="text-center py-8">
+                            <div className="text-lg font-medium text-textSecondary mb-2">
+                                Select a prediction market to view price comparison
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Right Panel - Swap Interface */}
+                <div className="bg-primary p-4 rounded-lg border border-border">
+                    <StepperSwap
+                        fromToken={fromToken}
+                        targetToken={targetToken}
+                        onFromTokenChange={setFromToken}
+                        onTargetTokenChange={setTargetToken}
+                        selectedMarket={selectedMarket}
+                        onMarketChange={setSelectedMarket}
+                    />
+                </div>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-primary p-4 rounded-lg border border-border">
+                    <div className="text-sm text-textSecondary mb-1">24h Volume</div>
+                    <div className="text-xl font-medium text-accent">$2.5M</div>
+                </div>
+                <div className="bg-primary p-4 rounded-lg border border-border">
+                    <div className="text-sm text-textSecondary mb-1">Active Markets</div>
+                    <div className="text-xl font-medium text-success">50+</div>
+                </div>
+                <div className="bg-primary p-4 rounded-lg border border-border">
+                    <div className="text-sm text-textSecondary mb-1">Total Liquidity</div>
+                    <div className="text-xl font-medium text-warning">$1.2M</div>
+                </div>
+            </div>
+
+            {/* Popular Markets Section */}
+            <div className="mt-8">
+                <h2 className="text-2xl font-bold mb-4">Popular Markets</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="bg-primary p-4 rounded-lg border border-border hover:border-accent transition-all duration-200 cursor-pointer">
+                        <div className="flex items-start justify-between mb-3">
+                            <div className="font-medium">ETH Price by EOY</div>
+                            <div className="bg-accent bg-opacity-20 text-accent px-2 py-1 rounded-full text-xs">Crypto</div>
+                        </div>
+                        <div className="mb-4">
+                            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                                <div className="h-full bg-gradient-to-r from-danger via-warning to-success" style={{width: '65%'}}></div>
+                            </div>
+                            <div className="flex justify-between mt-1 text-sm">
+                                <span className="text-textSecondary">Yes: 65%</span>
+                                <span className="text-textSecondary">No: 35%</span>
+                            </div>
+                        </div>
+                        <div className="text-success font-medium">$850K Volume</div>
+                    </div>
+                    <div className="bg-primary p-4 rounded-lg border border-border hover:border-accent transition-all duration-200 cursor-pointer">
+                        <div className="flex items-start justify-between mb-3">
+                            <div className="font-medium">Bitcoin ETF Approval</div>
+                            <div className="bg-accent bg-opacity-20 text-accent px-2 py-1 rounded-full text-xs">Regulation</div>
+                        </div>
+                        <div className="mb-4">
+                            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                                <div className="h-full bg-gradient-to-r from-danger via-warning to-success" style={{width: '78%'}}></div>
+                            </div>
+                            <div className="flex justify-between mt-1 text-sm">
+                                <span className="text-textSecondary">Yes: 78%</span>
+                                <span className="text-textSecondary">No: 22%</span>
+                            </div>
+                        </div>
+                        <div className="text-success font-medium">$1.2M Volume</div>
+                    </div>
+                    <div className="bg-primary p-4 rounded-lg border border-border hover:border-accent transition-all duration-200 cursor-pointer">
+                        <div className="flex items-start justify-between mb-3">
+                            <div className="font-medium">Fed Rate Decision</div>
+                            <div className="bg-accent bg-opacity-20 text-accent px-2 py-1 rounded-full text-xs">Finance</div>
+                        </div>
+                        <div className="mb-4">
+                            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                                <div className="h-full bg-gradient-to-r from-danger via-warning to-success" style={{width: '45%'}}></div>
+                            </div>
+                            <div className="flex justify-between mt-1 text-sm">
+                                <span className="text-textSecondary">Yes: 45%</span>
+                                <span className="text-textSecondary">No: 55%</span>
+                            </div>
+                        </div>
+                        <div className="text-success font-medium">$950K Volume</div>
                     </div>
                 </div>
             </div>
+          </div>
         </div>
     );
 }

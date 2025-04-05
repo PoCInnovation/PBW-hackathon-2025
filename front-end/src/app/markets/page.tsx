@@ -97,6 +97,65 @@ export default function MarketsPage() {
             </button>
           </header>
             <div className="max-w-7xl mx-auto">
+                {/* Market Overview Section */}
+                <div className="mb-12">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                        <div className="bg-primary p-6 rounded-lg border border-border">
+                            <div className="text-2xl font-bold text-accent mb-1">
+                                ${markets.reduce((acc, m) => acc + m.volume, 0).toLocaleString()}
+                            </div>
+                            <div className="text-textSecondary">Total Volume</div>
+                        </div>
+                        <div className="bg-primary p-6 rounded-lg border border-border">
+                            <div className="text-2xl font-bold text-success mb-1">
+                                {markets.length}
+                            </div>
+                            <div className="text-textSecondary">Active Markets</div>
+                        </div>
+                        <div className="bg-primary p-6 rounded-lg border border-border">
+                            <div className="text-2xl font-bold text-warning mb-1">
+                                ${markets.reduce((acc, m) => acc + m.liquidity, 0).toLocaleString()}
+                            </div>
+                            <div className="text-textSecondary">Total Liquidity</div>
+                        </div>
+                        <div className="bg-primary p-6 rounded-lg border border-border">
+                            <div className="text-2xl font-bold text-info mb-1">
+                                {new Set(markets.map(m => m.category)).size}
+                            </div>
+                            <div className="text-textSecondary">Categories</div>
+                        </div>
+                    </div>
+
+                    {/* Trending Markets */}
+                    <div className="mb-8">
+                        <h2 className="text-2xl font-bold mb-4">Trending Markets</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {markets
+                                .sort((a, b) => b.volume - a.volume)
+                                .slice(0, 3)
+                                .map((market) => (
+                                    <div
+                                        key={market.id}
+                                        className="bg-primary p-4 rounded-lg border border-border hover:border-accent transition-all duration-200"
+                                    >
+                                        <div className="flex items-start justify-between mb-2">
+                                            <div className="font-medium">{market.question}</div>
+                                            <div className="bg-accent bg-opacity-20 text-accent px-2 py-1 rounded-full text-xs">
+                                                {market.category}
+                                            </div>
+                                        </div>
+                                        <div className="text-success font-medium">
+                                            ${market.volume.toLocaleString()}
+                                        </div>
+                                        <div className="text-textSecondary text-sm">
+                                            24h Volume
+                                        </div>
+                                    </div>
+                                ))}
+                        </div>
+                    </div>
+                </div>
+
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-accent to-accentGradient text-transparent bg-clip-text">
                         Prediction Markets
