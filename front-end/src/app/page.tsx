@@ -131,16 +131,28 @@ export default function Home() {
             {/* Quick Stats */}
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-primary p-4 rounded-lg border border-border">
-                    <div className="text-sm text-textSecondary mb-1">24h Volume</div>
-                    <div className="text-xl font-medium text-accent">$2.5M</div>
+                    <div className="text-sm text-textSecondary mb-1">Total Volume</div>
+                    <div className="text-xl font-medium text-accent">
+                        ${markets.reduce((acc, m) => {
+                            const volume = parseFloat(m.volume);
+                            return acc + (isNaN(volume) ? 0 : volume);
+                        }, 0).toLocaleString()}
+                    </div>
                 </div>
                 <div className="bg-primary p-4 rounded-lg border border-border">
                     <div className="text-sm text-textSecondary mb-1">Active Markets</div>
-                    <div className="text-xl font-medium text-success">50+</div>
+                    <div className="text-xl font-medium text-success">
+                        {markets.length}+
+                    </div>
                 </div>
                 <div className="bg-primary p-4 rounded-lg border border-border">
                     <div className="text-sm text-textSecondary mb-1">Total Liquidity</div>
-                    <div className="text-xl font-medium text-warning">$1.2M</div>
+                    <div className="text-xl font-medium text-warning">
+                        ${markets.reduce((acc, m) => {
+                            const liquidity = parseFloat(m.liquidity);
+                            return acc + (isNaN(liquidity) ? 0 : liquidity);
+                        }, 0).toLocaleString()}
+                    </div>
                 </div>
             </div>
 
