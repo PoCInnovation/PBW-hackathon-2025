@@ -1,4 +1,5 @@
 import React from 'react';
+import AppWalletProvider from "../components/AppWalletProvider";
 
 export const metadata = {
   title: 'FateFi - DeFi meets prediction markets',
@@ -18,7 +19,9 @@ export default function RootLayout({
             <h1>FateFi</h1>
             {/* Add navigation components here */}
           </header>
-          <main>{children}</main>
+          <main>
+            <AppWalletProvider>{children}</AppWalletProvider>
+          </main>
           <footer>
             <p>&copy; {new Date().getFullYear()} FateFi. All rights reserved.</p>
           </footer>
