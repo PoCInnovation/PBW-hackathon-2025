@@ -5,13 +5,32 @@ import { usePredictionMarkets } from '../../hooks/usePredictionMarkets';
 import TokenSelector from './TokenSelector';
 import { useTokenData } from '../../hooks/useTokenData';
 
+interface PredictionMarket {
+    id: string;
+    question: string;
+    endDate: string;
+    volume: string;
+    liquidity: string;
+    outcomes: string;
+    outcomePrices?: string;
+    description: string;
+    image: string;
+    icon: string;
+    active: boolean;
+    closed: boolean;
+    new: boolean;
+    featured: boolean;
+    archived: boolean;
+    restricted: boolean;
+}
+
 interface StepperSwapProps {
     fromToken: any;
     targetToken: any;
     onFromTokenChange: (token: any) => void;
     onTargetTokenChange: (token: any) => void;
-    selectedMarket: any;
-    onMarketChange: (market: any) => void;
+    selectedMarket: PredictionMarket | null;
+    onMarketChange: (market: PredictionMarket) => void;
 }
 
 export default function StepperSwap({
@@ -57,7 +76,7 @@ export default function StepperSwap({
         }
     };
 
-    const handleMarketSelect = (market: any) => {
+    const handleMarketSelect = (market: PredictionMarket) => {
         onMarketChange(market);
         handleNext();
     };
@@ -124,7 +143,7 @@ export default function StepperSwap({
                                 >
                                     <div className="font-medium mb-1">{market.question}</div>
                                     <div className="text-sm text-textSecondary">
-                                        Volume: ${market.volume.toLocaleString()}
+                                        Volume: ${parseFloat(market.volume).toLocaleString()}
                                     </div>
                                 </div>
                             ))}
@@ -140,7 +159,7 @@ export default function StepperSwap({
                                 <div>
                                     <div className="font-medium mb-1">{selectedMarket?.question}</div>
                                     <div className="text-sm text-textSecondary">
-                                        Volume: ${selectedMarket?.volume.toLocaleString()}
+                                        Volume: ${selectedMarket ? parseFloat(selectedMarket.volume).toLocaleString() : '0'}
                                     </div>
                                 </div>
                                 <button

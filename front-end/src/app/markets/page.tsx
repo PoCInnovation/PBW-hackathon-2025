@@ -148,25 +148,25 @@ export default function MarketsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                         <div className="bg-primary p-6 rounded-lg border border-border">
                             <div className="text-2xl font-bold text-accent mb-1">
-                                ${markets.reduce((acc, m) => acc + parseFloat(m.volume), 0).toLocaleString()}
+                                ${allMarkets.reduce((acc, m) => acc + parseFloat(m.volume), 0).toLocaleString()}
                             </div>
                             <div className="text-textSecondary">Total Volume</div>
                         </div>
                         <div className="bg-primary p-6 rounded-lg border border-border">
                             <div className="text-2xl font-bold text-success mb-1">
-                                {markets.length}
+                                {allMarkets.length}
                             </div>
                             <div className="text-textSecondary">Active Markets</div>
                         </div>
                         <div className="bg-primary p-6 rounded-lg border border-border">
                             <div className="text-2xl font-bold text-warning mb-1">
-                                ${markets.reduce((acc, m) => acc + parseFloat(m.liquidity), 0).toLocaleString()}
+                                ${allMarkets.reduce((acc, m) => acc + parseFloat(m.liquidity), 0).toLocaleString()}
                             </div>
                             <div className="text-textSecondary">Total Liquidity</div>
                         </div>
                         <div className="bg-primary p-6 rounded-lg border border-border">
                             <div className="text-2xl font-bold text-info mb-1">
-                                {new Set(markets.map(m => getCategory(m))).size}
+                                {new Set(allMarkets.map(m => getCategory(m))).size}
                             </div>
                             <div className="text-textSecondary">Categories</div>
                         </div>
@@ -176,7 +176,7 @@ export default function MarketsPage() {
                     <div className="mb-8">
                         <h2 className="text-2xl font-bold mb-4">Trending Markets</h2>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {markets
+                            {allMarkets
                                 .sort((a, b) => parseFloat(b.volume) - parseFloat(a.volume))
                                 .slice(0, 3)
                                 .map((market) => (
@@ -255,9 +255,9 @@ export default function MarketsPage() {
 
                 {/* Markets Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredMarkets.map((market) => (
+                    {filteredMarkets.map((market, index) => (
                         <div
-                            key={market.id}
+                            key={`${market.id}-${market.question}-${index}`}
                             className="bg-primary p-4 rounded-lg border border-border hover:border-accent transition-all duration-200 hover:shadow-lg hover:shadow-accent/10 cursor-pointer"
                             onClick={() => handleMarketSelect(market)}
                         >
