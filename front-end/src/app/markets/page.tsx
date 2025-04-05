@@ -179,9 +179,9 @@ export default function MarketsPage() {
                             {allMarkets
                                 .sort((a, b) => parseFloat(b.volume) - parseFloat(a.volume))
                                 .slice(0, 3)
-                                .map((market) => (
+                                .map((market, index) => (
                                     <div
-                                        key={market.id}
+                                        key={`${market.id}-${market.question}-${index}`}
                                         className="bg-primary p-4 rounded-lg border border-border hover:border-accent transition-all duration-200"
                                     >
                                         <div className="flex items-start justify-between mb-2">
