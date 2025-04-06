@@ -55,16 +55,16 @@ export default function StepperSwap({
     const [isCreating, setIsCreating] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [creationError, setCreationError] = useState<string | null>(null);
-    const { publicKey, connected } = useWallet();
+    const wallet = useWallet();
     const { connection } = useConnection();
     const [walletBalance, setWalletBalance] = useState<number>(0);
 
     // Fetch wallet balance
     useEffect(() => {
         const fetchBalance = async () => {
-            if (publicKey && connected) {
+            if (wallet.publicKey && wallet.connected) {
                 try {
-                    const balance = await connection.getBalance(publicKey);
+                    const balance = await connection.getBalance(wallet.publicKey);
                     setWalletBalance(balance / LAMPORTS_PER_SOL);
                 } catch (error) {
                     console.error('Error fetching wallet balance:', error);
@@ -72,7 +72,7 @@ export default function StepperSwap({
             }
         };
         fetchBalance();
-    }, [publicKey, connected, connection]);
+    }, [wallet.publicKey, wallet.connected, connection]);
 
     // Initialize tokens when data is loaded
     useEffect(() => {
@@ -94,7 +94,7 @@ export default function StepperSwap({
         if (currentStep < 2) {
             setCurrentStep(currentStep + 1);
         } else {
-            if (connected && selectedMarket) {
+            if (wallet.connected && selectedMarket) {
                 const requestedAmount = parseFloat(amount);
 
                 if (requestedAmount <= 0) {
@@ -110,7 +110,7 @@ export default function StepperSwap({
                 setIsCreating(true);
                 setCreationError(null);
                 try {
-                    await createTask(connection, selectedMarket.id, selectedAnswer === 'yes' ? 0 : 1, parseFloat(positiveThreshold), requestedAmount);
+                    await createTask(wallet, selectedMarket.id, selectedAnswer === 'yes' ? 0 : 1, parseFloat(positiveThreshold), requestedAmount);
                     setShowSuccess(true);
                     setTimeout(() => {
                         setShowSuccess(false);
@@ -364,7 +364,7 @@ export default function StepperSwap({
                             </button>
                             <button
                                 onClick={handleNext}
-                                disabled={!fromToken || !targetToken || !amount || !selectedAnswer || isCreating || !connected}
+                                disabled={!fromToken || !targetToken || !amount || !selectedAnswer || isCreating || !wallet.connected}
                                 className="flex-1 bg-accent text-white py-2 rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
                             >
                                 {isCreating ? (

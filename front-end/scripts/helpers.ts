@@ -13,8 +13,13 @@ export interface PDAInfo {
 }
 
 export async function setupConnection(wallet: any) {
+  if (!wallet) {
+    throw new Error("Wallet is required");
+  }
+
   const connection = new Connection(clusterApiUrl("devnet"));
   
+  // Create a provider with the wallet adapter
   const provider = new anchor.AnchorProvider(
     connection,
     wallet,
@@ -26,7 +31,12 @@ export async function setupConnection(wallet: any) {
   const idl = require("../public/fatefi.json");
   const program = new Program<Fatefi>(idl, provider);
   
-  const user = provider.wallet.publicKey;
+  // Get the public key from the wallet adapter
+  const user = wallet.publicKey;
+  
+  if (!user) {
+    throw new Error("Wallet public key is not available");
+  }
   
   return { program, user };
 }

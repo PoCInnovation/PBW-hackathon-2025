@@ -9,6 +9,14 @@ import { getTasks, Task } from '../../../scripts/get-tasks';
 import { useTokenData } from '../../hooks/useTokenData';
 import Link from 'next/link';
 
+interface Transaction {
+    date: Date;
+    type: 'buy' | 'sell';
+    marketId: string;
+    amount: number;
+    status: 'completed' | 'pending' | 'failed';
+}
+
 const DashboardPage = () => {
     const [balance, setBalance] = useState<number>(0);
     const { activePredictions, loading } = useMarket(); 
@@ -21,6 +29,7 @@ const DashboardPage = () => {
     const { tokens } = useTokenData();
     const [totalValue, setTotalValue] = useState<number>(0);
     const [performance30d, setPerformance30d] = useState<number>(0);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
 
     useEffect(() => {
       async function fetchBalance() {
@@ -68,13 +77,32 @@ const DashboardPage = () => {
 
     useEffect(() => {
         const calculateMetrics = async () => {
-            if (!tasks || !tokens) return;
+            if (!tasks || !tokens || !predictions) return;
 
             // Calculate total value of all positions
             const total = tasks.reduce((acc, task) => {
+                const prediction = predictions[task.marketId];
+                if (!prediction) return acc;
+
+                // Get the current probability for the user's prediction
+                let outcomePrices = [0.5, 0.5];
+                if (prediction.outcomePrices) {
+                    try {
+                        outcomePrices = typeof prediction.outcomePrices === 'string' 
+                            ? JSON.parse(prediction.outcomePrices)
+                            : prediction.outcomePrices;
+                    } catch (e) {
+                        console.error('Error parsing outcomePrices:', e);
+                    }
+                }
+
+                // Calculate position value based on prediction type
+                const probability = task.conditionType === 0 ? outcomePrices[0] : outcomePrices[1];
                 const token = tokens.find(t => t.symbol === (task.conditionType <= 1 ? 'ETH' : 'USDC'));
+                
                 if (token && token.current_price) {
-                    return acc + (task.amount * token.current_price);
+                    // Value = amount * current price * probability
+                    return acc + (task.amount * token.current_price * probability);
                 }
                 return acc;
             }, 0);
@@ -82,21 +110,59 @@ const DashboardPage = () => {
             setTotalValue(total);
 
             // Calculate 30d performance
-            // This is a simplified calculation - in a real app, you'd want to track historical positions
+            // This is a simplified calculation based on the current probability vs the threshold
             const performance = tasks.reduce((acc, task) => {
-                const token = tokens.find(t => t.symbol === (task.conditionType <= 1 ? 'ETH' : 'USDC'));
-                if (token && token.price_change_percentage_24h) {
-                    // Use 24h change as a proxy for 30d performance in this demo
-                    return acc + token.price_change_percentage_24h;
+                const prediction = predictions[task.marketId];
+                if (!prediction) return acc;
+
+                let outcomePrices = [0.5, 0.5];
+                if (prediction.outcomePrices) {
+                    try {
+                        outcomePrices = typeof prediction.outcomePrices === 'string' 
+                            ? JSON.parse(prediction.outcomePrices)
+                            : prediction.outcomePrices;
+                    } catch (e) {
+                        console.error('Error parsing outcomePrices:', e);
+                    }
                 }
-                return acc;
+
+                const currentProbability = task.conditionType === 0 ? outcomePrices[0] : outcomePrices[1];
+                const threshold = task.value / 100; // Convert percentage to decimal
+
+                // Calculate performance based on how far the current probability is from the threshold
+                const performance = ((currentProbability - threshold) / threshold) * 100;
+                return acc + performance;
             }, 0);
 
             setPerformance30d(performance / (tasks.length || 1)); // Average performance across positions
         };
 
         calculateMetrics();
-    }, [tasks, tokens]);
+    }, [tasks, tokens, predictions]);
+
+    useEffect(() => {
+        const fetchTransactions = async () => {
+            if (!wal.connected || !publicKey) return;
+
+            try {
+                // In a real app, this would fetch from your backend
+                // For now, we'll create transactions from tasks
+                const taskTransactions = tasks.map(task => ({
+                    date: new Date(), // In a real app, this would come from the blockchain
+                    type: task.conditionType <= 1 ? 'buy' : 'sell' as const,
+                    marketId: task.marketId,
+                    amount: task.amount,
+                    status: 'completed' as const
+                }));
+
+                setTransactions(taskTransactions);
+            } catch (error) {
+                console.error('Error fetching transactions:', error);
+            }
+        };
+
+        fetchTransactions();
+    }, [tasks, wal.connected, publicKey]);
 
     if (!isClient) {
       return null;
@@ -196,7 +262,6 @@ const DashboardPage = () => {
                 <div className="space-y-4">
                     {tasks.map((task, index) => {
                         const prediction = predictions[task.marketId];
-                        // Parse outcomePrices if it's a string
                         let outcomePrices = [0.5, 0.5];
                         if (prediction?.outcomePrices) {
                             try {
@@ -207,7 +272,16 @@ const DashboardPage = () => {
                                 console.error('Error parsing outcomePrices:', e);
                             }
                         }
-                        
+
+                        const currentProbability = task.conditionType === 0 ? outcomePrices[0] : outcomePrices[1];
+                        const threshold = task.value / 100;
+                        const performance = ((currentProbability - threshold) / threshold) * 100;
+
+                        // Calculate position value in dollars
+                        const token = tokens.find(t => t.symbol === (task.conditionType <= 1 ? 'ETH' : 'USDC'));
+                        const amount = Number(task.amount) || 0; // Convert to number and default to 0 if invalid
+                        const positionValue = token?.current_price ? (amount * token.current_price) : 0;
+
                         return (
                             <div key={`task-${index}`} className="prediction-card">
                                 <div className="flex justify-between items-start mb-4">
@@ -225,18 +299,25 @@ const DashboardPage = () => {
                                         ></div>
                                     </div>
                                     <div className="flex justify-between mt-1 text-sm">
-                                        <span>Current probability: {(outcomePrices[0] * 100)}% yes</span>
-                                        <span>Amount: {task.amount || 50} SOL</span>
+                                        <span>Current probability: {(outcomePrices[0] * 100).toFixed(1)}% yes</span>
+                                        <div className="text-right">
+                                            <div className="font-medium">{amount.toFixed(4)} SOL</div>
+                                            <div className="text-textSecondary">${positionValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                                        </div>
                                     </div>
                                 </div>
 
                                 <div className="bg-primary p-3 rounded-lg">
-                                    <p className="text-textSecondary text-sm mb-1">
-                                        {task.conditionType === 0 ? `If prediction > ${task.value || 50}%` : 
-                                         task.conditionType === 1 ? `If prediction < ${task.value || 50}%` :
-                                         `If prediction = ${task.value}%`}
-
-                                    </p>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <p className="text-textSecondary text-sm">
+                                            {task.conditionType === 0 ? `If prediction > ${task.value}%` : 
+                                             task.conditionType === 1 ? `If prediction < ${task.value}%` :
+                                             `If prediction = ${task.value}%`}
+                                        </p>
+                                        <span className={`text-sm font-medium ${performance >= 0 ? 'text-success' : 'text-danger'}`}>
+                                            {performance >= 0 ? '+' : ''}{performance.toFixed(1)}%
+                                        </span>
+                                    </div>
                                     <div className="flex items-center">
                                         <div className="w-6 h-6 mr-2 rounded-full overflow-hidden bg-gray-700">
                                             <img src={task.conditionType <= 1 ? 
@@ -287,36 +368,42 @@ const DashboardPage = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="border-b border-border">
-                      <td className="py-4">2024-04-05</td>
-                      <td className="py-4">
-                        <span className="bg-success bg-opacity-20 text-success px-2 py-1 rounded-full text-xs">
-                          Buy
-                        </span>
-                      </td>
-                      <td className="py-4">ETH {'>'} $3000</td>
-                      <td className="py-4">0.5 ETH</td>
-                      <td className="py-4">
-                        <span className="bg-accent bg-opacity-20 text-accent px-2 py-1 rounded-full text-xs">
-                          Completed
-                        </span>
-                      </td>
-                    </tr>
-                    <tr className="border-b border-border">
-                      <td className="py-4">2024-04-04</td>
-                      <td className="py-4">
-                        <span className="bg-danger bg-opacity-20 text-danger px-2 py-1 rounded-full text-xs">
-                          Sell
-                        </span>
-                      </td>
-                      <td className="py-4">BTC {'>'} $50k</td>
-                      <td className="py-4">0.1 BTC</td>
-                      <td className="py-4">
-                        <span className="bg-accent bg-opacity-20 text-accent px-2 py-1 rounded-full text-xs">
-                          Completed
-                        </span>
-                      </td>
-                    </tr>
+                    {transactions.map((transaction, index) => {
+                        const prediction = predictions[transaction.marketId];
+                        return (
+                            <tr key={index} className="border-b border-border">
+                                <td className="py-4">
+                                    {transaction.date.toLocaleDateString()}
+                                </td>
+                                <td className="py-4">
+                                    <span className={`px-2 py-1 rounded-full text-xs ${
+                                        transaction.type === 'buy' 
+                                            ? 'bg-success bg-opacity-20 text-success'
+                                            : 'bg-danger bg-opacity-20 text-danger'
+                                    }`}>
+                                        {transaction.type === 'buy' ? 'Buy' : 'Sell'}
+                                    </span>
+                                </td>
+                                <td className="py-4">
+                                    {prediction?.question || transaction.marketId}
+                                </td>
+                                <td className="py-4">
+                                    {transaction.amount} SOL
+                                </td>
+                                <td className="py-4">
+                                    <span className={`px-2 py-1 rounded-full text-xs ${
+                                        transaction.status === 'completed'
+                                            ? 'bg-accent bg-opacity-20 text-accent'
+                                            : transaction.status === 'pending'
+                                            ? 'bg-warning bg-opacity-20 text-warning'
+                                            : 'bg-danger bg-opacity-20 text-danger'
+                                    }`}>
+                                        {transaction.status === 'completed' ? 'Completed' : transaction.status === 'pending' ? 'Pending' : 'Failed'}
+                                    </span>
+                                </td>
+                            </tr>
+                        );
+                    })}
                   </tbody>
                 </table>
               </div>
