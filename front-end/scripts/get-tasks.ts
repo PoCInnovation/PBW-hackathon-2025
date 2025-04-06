@@ -73,10 +73,12 @@ export async function getTasks(wallet: any) {
 
       return tasks;
     } catch (error) {
-      console.error("Error accessing user registry:", error);
-      console.log("The user registry may not exist yet. Create a task first with the create-task script.");
+      // If the user registry doesn't exist yet, return an empty array
+      console.log("No user registry found yet. This is normal for new users.");
+      return [];
     }
   } catch (error) {
     console.error("Error getting tasks:", error);
+    return [];
   }
 }

@@ -5,7 +5,8 @@ import { usePredictionMarkets } from '../../hooks/usePredictionMarkets';
 import TokenSelector from './TokenSelector';
 import { useTokenData } from '../../hooks/useTokenData';
 import { createTask } from '../../../scripts/create-task';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 interface PredictionMarket {
     id: string;
@@ -54,7 +55,24 @@ export default function StepperSwap({
     const [isCreating, setIsCreating] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [creationError, setCreationError] = useState<string | null>(null);
-    const connection = useWallet();
+    const { publicKey, connected } = useWallet();
+    const { connection } = useConnection();
+    const [walletBalance, setWalletBalance] = useState<number>(0);
+
+    // Fetch wallet balance
+    useEffect(() => {
+        const fetchBalance = async () => {
+            if (publicKey && connected) {
+                try {
+                    const balance = await connection.getBalance(publicKey);
+                    setWalletBalance(balance / LAMPORTS_PER_SOL);
+                } catch (error) {
+                    console.error('Error fetching wallet balance:', error);
+                }
+            }
+        };
+        fetchBalance();
+    }, [publicKey, connected, connection]);
 
     // Initialize tokens when data is loaded
     useEffect(() => {
@@ -76,19 +94,37 @@ export default function StepperSwap({
         if (currentStep < 2) {
             setCurrentStep(currentStep + 1);
         } else {
-            if (connection.connected && selectedMarket) {
+            if (connected && selectedMarket) {
+                const requestedAmount = parseFloat(amount);
+
+                if (requestedAmount <= 0) {
+                    setCreationError("Please enter an amount greater than 0");
+                    return;
+                }
+
+                if (walletBalance < requestedAmount) {
+                    setCreationError(`Insufficient balance. You have ${walletBalance} SOL but requested ${requestedAmount} SOL`);
+                    return;
+                }
+
                 setIsCreating(true);
                 setCreationError(null);
                 try {
-                    await createTask(connection, selectedMarket.id, selectedAnswer === 'yes' ? 0 : 1, positiveThreshold, parseFloat(amount));
+                    await createTask(connection, selectedMarket.id, selectedAnswer === 'yes' ? 0 : 1, parseFloat(positiveThreshold), requestedAmount);
                     setShowSuccess(true);
                     setTimeout(() => {
                         setShowSuccess(false);
                         setCurrentStep(1);
                     }, 2000);
-                } catch (error) {
+                } catch (error: any) {
                     console.error("Error creating task:", error);
-                    setCreationError("La création de position a échoué. Veuillez réessayer.");
+                    if (error.message?.includes("Attempt to debit an account but found no record of a prior credit")) {
+                        setCreationError("Insufficient balance. Please check your wallet balance and try again.");
+                    } else if (error.message?.includes("Transaction simulation failed")) {
+                        setCreationError("Transaction failed. Please check your wallet connection and try again.");
+                    } else {
+                        setCreationError(error.message || "Failed to create position. Please try again.");
+                    }
                 } finally {
                     setIsCreating(false);
                 }
@@ -328,20 +364,20 @@ export default function StepperSwap({
                             </button>
                             <button
                                 onClick={handleNext}
-                                disabled={!fromToken || !targetToken || !amount || !selectedAnswer || isCreating || !connection.connected}
+                                disabled={!fromToken || !targetToken || !amount || !selectedAnswer || isCreating || !connected}
                                 className="flex-1 bg-accent text-white py-2 rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
                             >
                                 {isCreating ? (
                                     <div className="flex items-center justify-center">
                                         <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
-                                        Création de position...
+                                        Placing position...
                                     </div>
                                 ) : showSuccess ? (
                                     <div className="flex items-center justify-center text-green-300">
                                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                                         </svg>
-                                        Position créée !
+                                        Position created !
                                     </div>
                                 ) : creationError ? (
                                     <div className="flex items-center justify-center text-red-300">
@@ -351,7 +387,7 @@ export default function StepperSwap({
                                         {creationError}
                                     </div>
                                 ) : (
-                                    "Créer une position"
+                                    "Place Position"
                                 )}
                             </button>
                         </div>
