@@ -5,6 +5,7 @@ import { usePredictionMarkets } from '../../hooks/usePredictionMarkets';
 import { useRouter } from 'next/navigation';
 import useMarket from '../../hooks/useMarket';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import Link from 'next/link';
 
 interface PredictionMarket {
     id: string;
@@ -123,9 +124,9 @@ export default function MarketsPage() {
     return (
         <div className="min-h-screen bg-background p-4">
           <header className="navbar">
-            <div className="flex items-center">
+            <Link href={"/c"} className="flex items-center">
               <h1 className="text-2xl font-bold bg-gradient-to-r from-accent to-accentGradient text-transparent bg-clip-text">FateFi</h1>
-            </div>
+            </Link>
             <nav className="hidden md:block">
               <ul className="flex space-x-6 items-center">
                 <li><a href="/" className="text-white hover:text-accent transition-colors">Home</a></li>
