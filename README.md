@@ -1,37 +1,56 @@
+<img src="front-end/public/logo.png" alt="Logo" width="200"/>
+
 # FateFi
 
-FateFi is DeFi meets prediction markets.
+When DeFi meets prediction markets.
+
+## How does it work?
+
+FateFi uses Solana smart contracts to manage automated token swaps based on prediction market outcomes. The system:
+
+1. Monitors prediction market prices/probabilities via on-chain oracles
+2. Executes swaps when user-defined thresholds are crossed
+3. Provides a risk management layer on top of prediction markets
 
 Users deposit tokens (e.g. SOL), choose a market (e.g. "Will ETH be above $4k by June?"), and define:
 
-Target Token – the asset to swap into if the prediction passes a set threshold.
-
-Downside Plan – the asset to swap into (usually a stablecoin) if the prediction weakens.
+- Target Token – the asset to swap into if the prediction passes a set threshold.
+- Downside Plan – the asset to swap into (usually a stablecoin) if the prediction weakens.
 
 📈 If the prediction crosses a positive threshold (e.g. >65%), the user swaps into a bullish asset.
 <br/>
 📉 If it drops below a protective threshold (e.g. <35%), they swap into safety.
-
 Think of it as a speculation-aware automated risk manager.
 
 
-## How does it work?
-
-[Explain how this project is working]
+The core logic is built with Anchor framework and integrates with various DeFi protocols for token swaps.
 
 ## Getting Started
 
 ### Installation
 
-[Explain how to install all of the project's dependencies]
+```bash
+cd front-end
+npm install
+```
 
 ### Quickstart
 
-[Explain how to run this project]
+FateFi contracts address: `GfJp5WgVVvSkxdAGSRKEgfjZXdDKPWorNKBQ7sWFE5uD`
+
+```bash
+cd front-end
+npm run dev
+```
 
 ### Usage
 
-[Explain how to use this project]
+1. Connect your Solana wallet using the wallet adapter
+2. Select a prediction market to participate in
+3. Define your target token and downside plan
+4. Set your threshold parameters
+5. Deposit tokens to activate your strategy
+6. Monitor your positions in the dashboard
 
 ## Get involved
 
