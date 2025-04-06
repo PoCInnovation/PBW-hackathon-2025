@@ -1,6 +1,6 @@
 # FateFi
 
-FateFi is DeFi meets prediction markets.
+FateFi is when DeFi meets prediction markets.
 
 Users deposit tokens (e.g. SOL), choose a market (e.g. "Will ETH be above $4k by June?"), and define:
 
