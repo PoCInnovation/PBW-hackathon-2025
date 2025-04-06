@@ -6,6 +6,8 @@ import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import useMarket from '../../hooks/useMarket';
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { getTasks, Task } from '../../../scripts/get-tasks';
+import { useTokenData } from '../../hooks/useTokenData';
+import Link from 'next/link';
 
 const DashboardPage = () => {
     const [balance, setBalance] = useState<number>(0);
@@ -16,6 +18,9 @@ const DashboardPage = () => {
     const wal = useWallet();
     const [tasks, setTasks] = useState<Task[]>([]);
     const [predictions, setPredictions] = useState<Record<string, any>>({});
+    const { tokens } = useTokenData();
+    const [totalValue, setTotalValue] = useState<number>(0);
+    const [performance30d, setPerformance30d] = useState<number>(0);
 
     useEffect(() => {
       async function fetchBalance() {
@@ -60,6 +65,38 @@ const DashboardPage = () => {
     useEffect(() => {
       setIsClient(true);
     }, []);
+
+    useEffect(() => {
+        const calculateMetrics = async () => {
+            if (!tasks || !tokens) return;
+
+            // Calculate total value of all positions
+            const total = tasks.reduce((acc, task) => {
+                const token = tokens.find(t => t.symbol === (task.conditionType <= 1 ? 'ETH' : 'USDC'));
+                if (token && token.current_price) {
+                    return acc + (task.amount * token.current_price);
+                }
+                return acc;
+            }, 0);
+
+            setTotalValue(total);
+
+            // Calculate 30d performance
+            // This is a simplified calculation - in a real app, you'd want to track historical positions
+            const performance = tasks.reduce((acc, task) => {
+                const token = tokens.find(t => t.symbol === (task.conditionType <= 1 ? 'ETH' : 'USDC'));
+                if (token && token.price_change_percentage_24h) {
+                    // Use 24h change as a proxy for 30d performance in this demo
+                    return acc + token.price_change_percentage_24h;
+                }
+                return acc;
+            }, 0);
+
+            setPerformance30d(performance / (tasks.length || 1)); // Average performance across positions
+        };
+
+        calculateMetrics();
+    }, [tasks, tokens]);
 
     if (!isClient) {
       return null;
@@ -109,13 +146,13 @@ const DashboardPage = () => {
             </div>
             <div className="bg-primary p-6 rounded-lg border border-border">
               <div className="text-2xl font-bold text-warning mb-1">
-                $12,450
+                ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
               <div className="text-textSecondary">Total Value</div>
             </div>
             <div className="bg-primary p-6 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-info mb-1">
-                +15.4%
+              <div className={`text-2xl font-bold mb-1 ${performance30d >= 0 ? 'text-success' : 'text-danger'}`}>
+                {performance30d >= 0 ? '+' : ''}{performance30d.toFixed(1)}%
               </div>
               <div className="text-textSecondary">30d Performance</div>
             </div>
@@ -146,7 +183,9 @@ const DashboardPage = () => {
           <div className="card mb-8">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold">Your Active Positions</h2>
-                <button className="btn btn-primary">Create New Position</button>
+                <Link href="/">
+                    <button className="btn btn-primary">Create New Position</button>
+                </Link>
             </div>
 
             {loading ? (
@@ -218,7 +257,9 @@ const DashboardPage = () => {
                 <div className="text-center py-12 bg-primary rounded-xl">
                     <p className="text-xl mb-4">No active predictions found</p>
                     <p className="text-textSecondary mb-6">Create your first position to get started</p>
-                    <button className="btn btn-primary">Create Position</button>
+                    <Link href="/">
+                        <button className="btn btn-primary">Create Position</button>
+                    </Link>
                 </div>
             )}
           </div>
