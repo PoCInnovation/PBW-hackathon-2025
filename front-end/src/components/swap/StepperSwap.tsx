@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { usePredictionMarkets } from '../../hooks/usePredictionMarkets';
 import TokenSelector from './TokenSelector';
 import { useTokenData } from '../../hooks/useTokenData';
+import { createTask } from '../../../scripts/create-task';
+import { useWallet } from '@solana/wallet-adapter-react';
 
 interface PredictionMarket {
     id: string;
@@ -49,6 +51,10 @@ export default function StepperSwap({
     const [hasInitialized, setHasInitialized] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedAnswer, setSelectedAnswer] = useState<'yes' | 'no' | null>(null);
+    const [isCreating, setIsCreating] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [creationError, setCreationError] = useState<string | null>(null);
+    const connection = useWallet();
 
     // Initialize tokens when data is loaded
     useEffect(() => {
@@ -66,9 +72,27 @@ export default function StepperSwap({
         }
     }, [selectedMarket]);
 
-    const handleNext = () => {
+    const handleNext = async() => {
         if (currentStep < 2) {
             setCurrentStep(currentStep + 1);
+        } else {
+            if (connection.connected) {
+                setIsCreating(true);
+                setCreationError(null);
+                try {
+                    await createTask(connection);
+                    setShowSuccess(true);
+                    setTimeout(() => {
+                        setShowSuccess(false);
+                        setCurrentStep(1);
+                    }, 2000);
+                } catch (error) {
+                    console.error("Error creating task:", error);
+                    setCreationError("La création de position a échoué. Veuillez réessayer.");
+                } finally {
+                    setIsCreating(false);
+                }
+            }
         }
     };
 
@@ -304,10 +328,31 @@ export default function StepperSwap({
                             </button>
                             <button
                                 onClick={handleNext}
-                                disabled={!fromToken || !targetToken || !amount || !selectedAnswer}
-                                className="flex-1 bg-accent text-white py-2 rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={!fromToken || !targetToken || !amount || !selectedAnswer || isCreating || !connection.connected}
+                                className="flex-1 bg-accent text-white py-2 rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
                             >
-                                Create Position
+                                {isCreating ? (
+                                    <div className="flex items-center justify-center">
+                                        <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
+                                        Création de position...
+                                    </div>
+                                ) : showSuccess ? (
+                                    <div className="flex items-center justify-center text-green-300">
+                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        Position créée !
+                                    </div>
+                                ) : creationError ? (
+                                    <div className="flex items-center justify-center text-red-300">
+                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                        {creationError}
+                                    </div>
+                                ) : (
+                                    "Créer une position"
+                                )}
                             </button>
                         </div>
                     </div>

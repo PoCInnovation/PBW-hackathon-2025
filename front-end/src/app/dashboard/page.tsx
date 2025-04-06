@@ -5,19 +5,25 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import useMarket from '../../hooks/useMarket';
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { getTasks } from '../../../scripts/get-tasks';
 
 const DashboardPage = () => {
     const [balance, setBalance] = useState<number>(0);
+    const [tasks, setTasks] = useState<any>(0);
     const { activePredictions, loading } = useMarket();
     const [isClient, setIsClient] = useState(false);
     const { connection } = useConnection();
     const { publicKey } = useWallet();
+    const wal = useWallet();
 
     useEffect(() => {
       async function fetchBalance() {
-        if (publicKey) {
+        if (publicKey && wal.connected) {
           const newBalance = await connection.getBalance(publicKey);
           setBalance(newBalance / LAMPORTS_PER_SOL);
+          console.log("arah");
+          await getTasks(wal);
+          console.log("arah");
         }
       }
       fetchBalance();
