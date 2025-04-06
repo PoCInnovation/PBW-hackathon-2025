@@ -2,7 +2,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { setupConnection, findPDAs, findUserRegistryPDA, findExecutorPDA } from "./helpers";
 import { Keypair } from "@solana/web3.js";
 
-export async function createTask(wallet: any) {
+export async function createTask(wallet: any, marketId: string, conditionType: number, positiveThreshold: number, value: number) {
   // Use the helper functions
   const { program, user } = await setupConnection(wallet);
   
@@ -25,16 +25,14 @@ export async function createTask(wallet: any) {
   console.log("Executor PDA:", executorPda.toString());
   
   try {
-    const marketId = "polymarket_btc_price";
-    const conditionType = 0; // ">" greater than
-    const expectedValue = new anchor.BN(150); // BTC price > $150
+    const expectedValue = new anchor.BN(positiveThreshold);
     
     // Dummy Raydium swap data for testing
     const raydiumSwapData = {
       tokenInMint: Keypair.generate().publicKey,
       tokenOutMint: Keypair.generate().publicKey,
       poolAddress: Keypair.generate().publicKey,
-      amountIn: new anchor.BN(1000000000), // 1 SOL
+      amountIn: new anchor.BN(value), // 1 SOL
       minimumAmountOut: new anchor.BN(10000000), // 0.01 USDC
       slippageTolerance: 1, // 1%
       deadline: new anchor.BN(Math.floor(Date.now() / 1000) + 3600), // 1 hour from now

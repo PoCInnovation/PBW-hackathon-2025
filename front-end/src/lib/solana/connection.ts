@@ -33,30 +33,18 @@ const mockMarkets: Record<string, Market> = {
  * This is a placeholder implementation that returns mock data
  */
 export const fetchMarketData = async (marketId: string): Promise<Market> => {
-    // Simulate API latency
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // Return mock data or throw error if market doesn't exist
-    if (marketId in mockMarkets) {
-        return mockMarkets[marketId];
-    }
-
-    // If market ID is 'all', return all markets
-    if (marketId === 'all') {
-        return Object.values(mockMarkets)[0]; // Just return the first one for now
-    }
-
-    throw new Error(`Market with ID ${marketId} not found`);
+    const req = await fetch(`https://gamma-api.polymarket.com/markets/${marketId}`)
+    const data = await req.json();
+    return data;
 };
 
 /**
  * Fetch all available markets
  */
 export const fetchAllMarkets = async (): Promise<Market[]> => {
-    // Simulate API latency
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    return Object.values(mockMarkets);
+    const req = await fetch(`https://gamma-api.polymarket.com/markets`)
+    const data = await req.json();
+    return data;
 };
 
 /**

@@ -1,5 +1,14 @@
 import { setupConnection, findUserRegistryPDA } from "./helpers";
 
+export interface Task {
+  marketId: string;
+  conditionType: number;
+  value: number;
+  amount: number;
+  isExecuted: boolean;
+  readyForExecution: boolean;
+}
+
 export async function getTasks(wallet: any) {
   // Use the helper functions
   const { program, user } = await setupConnection(wallet);
@@ -20,6 +29,8 @@ export async function getTasks(wallet: any) {
       
       // If we can get the registry directly, display executors from it
       console.log(`Found ${userRegistry.executorAddresses.length} executors:`);
+
+      const tasks: Task[] = [];
       
       for (let i = 0; i < userRegistry.executorAddresses.length; i++) {
         const executorPda = userRegistry.executorAddresses[i];
@@ -34,6 +45,15 @@ export async function getTasks(wallet: any) {
           console.log(`- Executed: ${executorAccount.isExecuted}`);
           console.log(`- Ready for execution: ${executorAccount.readyForExecution}`);
           
+          tasks.push({
+            marketId: executorAccount.marketId,
+            conditionType: executorAccount.conditionType,
+            value: executorAccount.expectedValue.toNumber(),
+            amount: executorAccount.raydiumSwapData.amountIn.toString(),
+            isExecuted: executorAccount.isExecuted,
+            readyForExecution: executorAccount.readyForExecution
+          });
+
           // Display swap details
           console.log("Swap Details:");
           console.log(`- Token In: ${executorAccount.raydiumSwapData.tokenInMint.toString()}`);
@@ -50,6 +70,8 @@ export async function getTasks(wallet: any) {
       if (userRegistry.executorAddresses.length === 0) {
         console.log("No executors found. Create a task first with the create-task script.");
       }
+
+      return tasks;
     } catch (error) {
       console.error("Error accessing user registry:", error);
       console.log("The user registry may not exist yet. Create a task first with the create-task script.");

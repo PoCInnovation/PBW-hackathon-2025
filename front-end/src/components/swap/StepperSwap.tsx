@@ -76,11 +76,11 @@ export default function StepperSwap({
         if (currentStep < 2) {
             setCurrentStep(currentStep + 1);
         } else {
-            if (connection.connected) {
+            if (connection.connected && selectedMarket) {
                 setIsCreating(true);
                 setCreationError(null);
                 try {
-                    await createTask(connection);
+                    await createTask(connection, selectedMarket.id, selectedAnswer === 'yes' ? 0 : 1, positiveThreshold, parseFloat(amount));
                     setShowSuccess(true);
                     setTimeout(() => {
                         setShowSuccess(false);

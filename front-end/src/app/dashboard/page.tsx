@@ -5,29 +5,57 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import useMarket from '../../hooks/useMarket';
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { getTasks } from '../../../scripts/get-tasks';
+import { getTasks, Task } from '../../../scripts/get-tasks';
 
 const DashboardPage = () => {
     const [balance, setBalance] = useState<number>(0);
-    const [tasks, setTasks] = useState<any>(0);
-    const { activePredictions, loading } = useMarket();
+    const { activePredictions, loading } = useMarket(); 
     const [isClient, setIsClient] = useState(false);
     const { connection } = useConnection();
     const { publicKey } = useWallet();
     const wal = useWallet();
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [predictions, setPredictions] = useState<Record<string, any>>({});
 
     useEffect(() => {
       async function fetchBalance() {
         if (publicKey && wal.connected) {
           const newBalance = await connection.getBalance(publicKey);
           setBalance(newBalance / LAMPORTS_PER_SOL);
-          console.log("arah");
-          await getTasks(wal);
-          console.log("arah");
+          const tasks = await getTasks(wal);
+          setTasks(tasks || []);
         }
       }
       fetchBalance();
     }, [publicKey]);
+
+    useEffect(() => {
+        const fetchPredictions = async () => {
+            const newPredictions: Record<string, any> = {};
+            for (const task of tasks) {
+                try {
+                    console.log(`Fetching prediction for task: ${task.marketId}`);
+                    const response = await fetch(`/api/market?marketId=${task.marketId}`);
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        console.error(`Error fetching market data for ${task.marketId}:`, data.error);
+                        continue;
+                    }
+                    
+                    newPredictions[task.marketId] = data;
+                    console.log(`Successfully fetched prediction for task: ${task.marketId}`);
+                } catch (err) {
+                    console.error(`Error fetching market data for ${task.marketId}:`, err);
+                }
+            }
+            setPredictions(newPredictions);
+        };
+
+        if (tasks.length > 0) {
+            fetchPredictions();
+        }
+    }, [tasks]);
 
     useEffect(() => {
       setIsClient(true);
@@ -75,7 +103,7 @@ const DashboardPage = () => {
             </div>
             <div className="bg-primary p-6 rounded-lg border border-border">
               <div className="text-2xl font-bold text-success mb-1">
-                {activePredictions?.length || 0}
+                {tasks?.length || 0}
               </div>
               <div className="text-textSecondary">Active Positions</div>
             </div>
@@ -115,7 +143,7 @@ const DashboardPage = () => {
           </div>
 
           {/* Active Positions Card */}
-          <div className="card">
+          <div className="card mb-8">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold">Your Active Positions</h2>
                 <button className="btn btn-primary">Create New Position</button>
@@ -125,56 +153,66 @@ const DashboardPage = () => {
                 <div className="flex justify-center items-center py-12">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
                 </div>
-            ) : activePredictions && activePredictions.length > 0 ? (
+            ) : tasks && tasks.length > 0 ? (
                 <div className="space-y-4">
-                    {activePredictions.map(prediction => (
-                        <div key={prediction.id} className="prediction-card">
-                            <div className="flex justify-between items-start mb-4">
-                                <h3 className="text-lg font-medium">{prediction.question}</h3>
-                                <div className="bg-primary px-3 py-1 rounded-full text-sm">
-                                    Active
-                                </div>
-                            </div>
-
-                            <div className="mb-4">
-                                <div className="h-2 w-full bg-primary rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-gradient-to-r from-danger via-warning to-success"
-                                        style={{width: "50%"}}
-                                    ></div>
-                                </div>
-                                <div className="flex justify-between mt-1 text-sm">
-                                    <span>Current probability: 50%</span>
-                                    <span>Target: {prediction.positiveThreshold}%</span>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="bg-primary p-3 rounded-lg">
-                                    <p className="text-textSecondary text-sm mb-1">If
-                                        prediction &gt; {prediction.positiveThreshold}%</p>
-                                    <div className="flex items-center">
-                                        <div className="w-6 h-6 mr-2 rounded-full overflow-hidden bg-gray-700">
-                                            <img src="https://cryptologos.cc/logos/ethereum-eth-logo.png?v=026"
-                                                 alt="ETH" className="w-full h-full object-cover"/>
-                                        </div>
-                                        <p>Swap to <span className="text-success font-medium">ETH</span></p>
+                    {tasks.map((task, index) => {
+                        const prediction = predictions[task.marketId];
+                        // Parse outcomePrices if it's a string
+                        let outcomePrices = [0.5, 0.5];
+                        if (prediction?.outcomePrices) {
+                            try {
+                                outcomePrices = typeof prediction.outcomePrices === 'string' 
+                                    ? JSON.parse(prediction.outcomePrices)
+                                    : prediction.outcomePrices;
+                            } catch (e) {
+                                console.error('Error parsing outcomePrices:', e);
+                            }
+                        }
+                        
+                        return (
+                            <div key={`task-${index}`} className="prediction-card">
+                                <div className="flex justify-between items-start mb-4">
+                                    <h3 className="text-lg font-medium">{prediction?.question || task.marketId}</h3>
+                                    <div className="bg-primary px-3 py-1 rounded-full text-sm">
+                                        Active
                                     </div>
                                 </div>
+
+                                <div className="mb-4">
+                                    <div className="h-2 w-full bg-primary rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-gradient-to-r from-danger via-warning to-success"
+                                            style={{width: `${(outcomePrices[0] * 100)}%`}}
+                                        ></div>
+                                    </div>
+                                    <div className="flex justify-between mt-1 text-sm">
+                                        <span>Current probability: {(outcomePrices[0] * 100)}% yes</span>
+                                        <span>Amount: {task.amount || 50} SOL</span>
+                                    </div>
+                                </div>
+
                                 <div className="bg-primary p-3 rounded-lg">
-                                    <p className="text-textSecondary text-sm mb-1">If
-                                        prediction &lt; {prediction.protectiveThreshold}%</p>
+                                    <p className="text-textSecondary text-sm mb-1">
+                                        {task.conditionType === 0 ? `If prediction > ${task.value || 50}%` : 
+                                         task.conditionType === 1 ? `If prediction < ${task.value || 50}%` :
+                                         `If prediction = ${task.value}%`}
+
+                                    </p>
                                     <div className="flex items-center">
                                         <div className="w-6 h-6 mr-2 rounded-full overflow-hidden bg-gray-700">
-                                            <img src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png?v=026"
-                                                 alt="USDC" className="w-full h-full object-cover"/>
+                                            <img src={task.conditionType <= 1 ? 
+                                                "https://cryptologos.cc/logos/ethereum-eth-logo.png?v=026" : 
+                                                "https://cryptologos.cc/logos/usd-coin-usdc-logo.png?v=026"}
+                                                 alt={task.conditionType <= 1 ? "ETH" : "USDC"} 
+                                                 className="w-full h-full object-cover"/>
                                         </div>
-                                        <p>Swap to <span className="text-danger font-medium">USDC</span></p>
+                                        <p>Swap to <span className={task.conditionType <= 1 ? "text-success font-medium" : "text-danger font-medium"}>
+                                            {task.conditionType <= 1 ? "ETH" : "USDC"}</span></p>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             ) : (
                 <div className="text-center py-12 bg-primary rounded-xl">
@@ -185,75 +223,78 @@ const DashboardPage = () => {
             )}
           </div>
 
-          {/* Transaction History */}
-          <div className="card">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">Transaction History</h2>
-              <div className="flex gap-2">
-                <button className="btn btn-secondary">Export</button>
-                <button className="btn btn-primary">Filter</button>
+          {/* Transaction History - Only display if there are active positions */}
+          {tasks && tasks.length > 0 && (
+            <div className="card">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold">Transaction History</h2>
+                <div className="flex gap-2">
+                  <button className="btn btn-secondary">Export</button>
+                  <button className="btn btn-primary">Filter</button>
+                </div>
               </div>
-            </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left border-b border-border">
-                    <th className="pb-3 text-textSecondary">Date</th>
-                    <th className="pb-3 text-textSecondary">Type</th>
-                    <th className="pb-3 text-textSecondary">Market</th>
-                    <th className="pb-3 text-textSecondary">Amount</th>
-                    <th className="pb-3 text-textSecondary">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-border">
-                    <td className="py-4">2024-04-05</td>
-                    <td className="py-4">
-                      <span className="bg-success bg-opacity-20 text-success px-2 py-1 rounded-full text-xs">
-                        Buy
-                      </span>
-                    </td>
-                    <td className="py-4">ETH {'>'} $3000</td>
-                    <td className="py-4">0.5 ETH</td>
-                    <td className="py-4">
-                      <span className="bg-accent bg-opacity-20 text-accent px-2 py-1 rounded-full text-xs">
-                        Completed
-                      </span>
-                    </td>
-                  </tr>
-                  <tr className="border-b border-border">
-                    <td className="py-4">2024-04-04</td>
-                    <td className="py-4">
-                      <span className="bg-danger bg-opacity-20 text-danger px-2 py-1 rounded-full text-xs">
-                        Sell
-                      </span>
-                    </td>
-                    <td className="py-4">BTC {'>'} $50k</td>
-                    <td className="py-4">0.1 BTC</td>
-                    <td className="py-4">
-                      <span className="bg-accent bg-opacity-20 text-accent px-2 py-1 rounded-full text-xs">
-                        Completed
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-left border-b border-border">
+                      <th className="pb-3 text-textSecondary">Date</th>
+                      <th className="pb-3 text-textSecondary">Type</th>
+                      <th className="pb-3 text-textSecondary">Market</th>
+                      <th className="pb-3 text-textSecondary">Amount</th>
+                      <th className="pb-3 text-textSecondary">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-border">
+                      <td className="py-4">2024-04-05</td>
+                      <td className="py-4">
+                        <span className="bg-success bg-opacity-20 text-success px-2 py-1 rounded-full text-xs">
+                          Buy
+                        </span>
+                      </td>
+                      <td className="py-4">ETH {'>'} $3000</td>
+                      <td className="py-4">0.5 ETH</td>
+                      <td className="py-4">
+                        <span className="bg-accent bg-opacity-20 text-accent px-2 py-1 rounded-full text-xs">
+                          Completed
+                        </span>
+                      </td>
+                    </tr>
+                    <tr className="border-b border-border">
+                      <td className="py-4">2024-04-04</td>
+                      <td className="py-4">
+                        <span className="bg-danger bg-opacity-20 text-danger px-2 py-1 rounded-full text-xs">
+                          Sell
+                        </span>
+                      </td>
+                      <td className="py-4">BTC {'>'} $50k</td>
+                      <td className="py-4">0.1 BTC</td>
+                      <td className="py-4">
+                        <span className="bg-accent bg-opacity-20 text-accent px-2 py-1 rounded-full text-xs">
+                          Completed
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
 
-            <div className="flex justify-between items-center mt-4">
-              <div className="text-textSecondary">
-                Showing 2 of 15 transactions
-              </div>
-              <div className="flex gap-2">
-                <button className="btn btn-secondary">Previous</button>
-                <button className="btn btn-primary">Next</button>
+              <div className="flex justify-between items-center mt-4">
+                <div className="text-textSecondary">
+                  Showing 2 of 15 transactions
+                </div>
+                <div className="flex gap-2">
+                  <button className="btn btn-secondary">Previous</button>
+                  <button className="btn btn-primary">Next</button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
         </div>
     );
 };
 
 export default DashboardPage;
+
